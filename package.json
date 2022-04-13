@@ -1,0 +1,17 @@
+{
+  "name": "handy",
+  "version": "1.0.0",
+  "description": "poker javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "poker"
+  ],
+  "author": "stephen pal-george",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.6.3"
+  }
+}
