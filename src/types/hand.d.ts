@@ -20,3 +20,12 @@ export interface HandDescription extends HandQuality {
     cards: Card[],
 }
 
+export interface GameHand {
+    id: string,
+    hand: Hand,
+}
+
+export interface GameHandDescription {
+    id: string,
+    hand: HandDescription,
+}

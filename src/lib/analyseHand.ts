@@ -1,21 +1,22 @@
-import {Card} from './types/card';
-import {Feature, Hand, HandDescription, HandQuality, HandType} from "./types/hand";
+import {Card} from '../types/card';
+import {Feature, Hand, HandDescription, HandQuality, HandType} from "../types/hand";
 import {cardRank, deck, handRank} from "./_data";
 
 /**
- * First we need a function that can analyse a 5-card hand and tell you what it is.
- * E.g. input -> ['5-d', '5-h', 'K-h', '8-c', 'K-s'], output -> '2 pair'
- *
- * Output will probably be a bit more sophisticated that this, to give some more context
- * to the hand, but this is the crux of it.
+ * Analyse an array of five "cards" and determine the poker hand that it represents.
  *
  * @param hand {array} - the hand to be analysed; an array of 5 strings, each representing a card.
  * @return HandDescription {HandDescription} - an object that gives details of the hand that has been analysed.
+ * @example analyseHand(['3-s', '3-d', '8-c', '9-h', 'A-h']) -> { type: 'pair', rank: 1, features: [{type: 'pair', value: '3'}], cards: ['3-s', '3-d', '8-c', '9-h', 'A-h'] }
+ * @example analyseHand(['4-s', '5-s', '8-s', '7-s', '6-s']) -> { type: 'straight-flush', rank: 8, features: [{type: 'straight', value: '4 - 8'}, {type: 'flush', value: 's'}], cards: ['4-s', '5-s', '8-s', '7-s', '6-s'] }
  */
 export default function analyseHand(hand: Hand): HandDescription {
-    console.log(hand);
-    hand.forEach(card => {
+    // safety first...
+    hand.forEach((card) => {
+        // check for invalid cards...
         if (!deck.includes(card)) throw new Error('hand includes invalid cards.');
+        // check for duplicates...
+        if (hand.filter(h => h === card).length > 1) throw new Error(`hand cannot include duplicates. (${card})`);
     });
 
     // ----------
@@ -95,7 +96,7 @@ export default function analyseHand(hand: Hand): HandDescription {
         }
     }
 
-    if (!hasFlush && !hasStraight) {
+    if (!hasFour && !hasThree && !hasPairs && !hasFlush && !hasStraight) {
         // all other cases have been covered, so we must just have a high card.
         let highCard = cards.map(c => c.value).reduce(
             (prev, curr) => {
@@ -115,6 +116,12 @@ export default function analyseHand(hand: Hand): HandDescription {
     }
 }
 
+/**
+ * Take a list of features and calculate the quality of the associated hand.
+ *
+ * @param features {Feature[]} - features will be analysed and combine to determine hand quality.
+ * @return HandQuality {HandQuality} - an object with the type of hand, and it's rank as a numerical value between 0 - 9 (inclusive).
+ */
 function calculateQuality(features: Feature[]): HandQuality {
     let type: HandType;
     if (features.length === 1) type = features[0].type;
@@ -125,7 +132,7 @@ function calculateQuality(features: Feature[]): HandQuality {
         else if (types.includes('pair') && types.includes('three')) type = 'full-house';
         else {
             const straight = features.filter(f => f.type === 'straight')[0];
-            type = straight.value.includes('13') ? 'royal-flush' : 'straight-flush';
+            type = straight.value.includes('14') ? 'royal-flush' : 'straight-flush';
         }
     }
 
