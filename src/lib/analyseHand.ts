@@ -1,6 +1,7 @@
 import {Card} from '../types/card';
 import {Feature, Hand, HandDescription, HandQuality, HandType} from "../types/hand";
 import {cardRank, deck, handRank} from "./_data";
+import { findFlush, findGroups, findStraight, getHighCard } from './utils';
 
 /**
  * Analyse an array of five "cards" and determine the poker hand that it represents.
@@ -36,74 +37,76 @@ export default function analyseHand(hand: Hand): HandDescription {
         cards.push({ value: parts[0], suit: parts[1] });
     });
 
-    let features: Feature[] = [];
-    // gather cards into meaningful groups
-    cards.forEach(({ value }) => {
-        // filter the cards for all those that have the same value as the current card.
-        const similar = cards.filter(c => c.value === value);
-        // the length of that array will determine the hand feature.
-        // Also, in each case, we need to make sure we're not duplicating features.
-        switch (similar.length) {
-            case 4:
-                if (
-                    features.map(f => f.type).filter(t => t === 'four').length === 0 &&
-                    features.map(f => f.value).filter(v => v === value).length === 0
-                ) {
-                    features.push({ type: 'four', value });
-                    hasFour = true;
-                }
-                break;
-            case 3:
-                if (
-                    features.map(f => f.type).filter(t => t === 'three').length === 0 &&
-                    features.map(f => f.value).filter(v => v === value).length === 0
-                ) {
-                    features.push({ type: 'three', value });
-                    hasThree = true;
-                }
-                break;
-            case 2:
-                if (
-                    features.filter(f => f.type === 'pair').map(f => f.value).filter(v => v === value).length === 0
-                ) {
-                    features.push({ type: 'pair', value });
-                    hasPairs = true;
-                }
-                break;
-            case 1:
-            default:
-                break;
-        }
-    });
+    let features: Feature[] = findGroups(cards);
+    // // gather cards into meaningful groups
+    // cards.forEach(({ value }) => {
+    //     // filter the cards for all those that have the same value as the current card.
+    //     const similar = cards.filter(c => c.value === value);
+    //     // the length of that array will determine the hand feature.
+    //     // Also, in each case, we need to make sure we're not duplicating features.
+    //     switch (similar.length) {
+    //         case 4:
+    //             if (
+    //                 features.map(f => f.type).filter(t => t === 'four').length === 0 &&
+    //                 features.map(f => f.value).filter(v => v === value).length === 0
+    //             ) {
+    //                 features.push({ type: 'four', value });
+    //                 hasFour = true;
+    //             }
+    //             break;
+    //         case 3:
+    //             if (
+    //                 features.map(f => f.type).filter(t => t === 'three').length === 0 &&
+    //                 features.map(f => f.value).filter(v => v === value).length === 0
+    //             ) {
+    //                 features.push({ type: 'three', value });
+    //                 hasThree = true;
+    //             }
+    //             break;
+    //         case 2:
+    //             if (
+    //                 features.filter(f => f.type === 'pair').map(f => f.value).filter(v => v === value).length === 0
+    //             ) {
+    //                 features.push({ type: 'pair', value });
+    //                 hasPairs = true;
+    //             }
+    //             break;
+    //         case 1:
+    //         default:
+    //             break;
+    //     }
+    // });
+    const featureTypes = features.map(f => f.type);
+    if (featureTypes.includes('pair')) hasPairs = true;
+    if (featureTypes.includes('three')) hasThree = true;
+    if (featureTypes.includes('four')) hasFour = true;
 
     if (!hasFour && !hasThree && !hasPairs) {
+        features = [...features, ...findFlush(cards)];
+        if (features.map(f => f.type).includes('flush')) hasFlush = true;
         // check for a flush
-        const flush = cards.filter(c => c.suit === cards[0].suit);
-        if (flush.length === 5) {
-            features.push({ type: 'flush', value: cards[0].suit });
-            hasFlush = true;
-        }
+        // const flush = cards.filter(c => c.suit === cards[0].suit);
+        // if (flush.length >= 5) {
+        //     features.push({ type: 'flush', value: cards[0].suit });
+        //     hasFlush = true;
+        // }
 
-        // check for a straight
-        const cardsAsRank: number[] = cards.map(c => cardRank.indexOf(c.value)).sort((a, b) => a - b);
-        const straight = cardsAsRank.filter((c, i) => {
-            const isSequential = cardsAsRank[i + 1] === c + 1;
-            if (isSequential || i === 4) return c;
-        });
-        if (straight.length === 5) {
-            features.push({ type: 'straight', value: `${straight[0] + 1} - ${straight[4] + 1}` });
-            hasStraight = true;
-        }
+        features = [...features, ...findStraight(cards)];
+        if (features.map(f => f.type).includes('straight')) hasStraight = true;
+        // // check for a straight
+        // const cardsAsRank: number[] = cards.map(c => cardRank.indexOf(c.value)).sort((a, b) => a - b);
+        // const straight = cardsAsRank.filter((c, i) => {
+        //     const isSequential = cardsAsRank[i + 1] === c + 1;
+        //     if (isSequential || i === cardsAsRank.length - 1) return c;
+        // });
+        // if (straight.length >= 5) {
+        //     features.push({ type: 'straight', value: `${straight[4]}` });
+        //     hasStraight = true;
+        // }
     }
 
     if (!hasFour && !hasThree && !hasPairs && !hasFlush && !hasStraight) {
-        // all other cases have been covered, so we must just have a high card.
-        let highCard = cards.map(c => c.value).reduce(
-            (prev, curr) => {
-                let isHigher = cardRank.indexOf(curr) > cardRank.indexOf(prev);
-                return isHigher ? curr : prev;
-            }
-        );
+        const highCard = getHighCard(cards);
         features.push({ type: 'high', value: highCard });
     }
 
