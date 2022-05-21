@@ -1,6 +1,6 @@
 import express, {Express, Request, Response} from "express";
 import bodyParser from "body-parser";
-import Routes from './routes';
+import {handRoutes} from './routes';
 
 import compareHands from "./lib/compareHands";
 import {GameHand} from "./types/hand";
@@ -21,8 +21,7 @@ app.get('/', (req: Request, res: Response) => {
     res.send('Handy api...')
 });
 
-app.use('/api/analysis', Routes.analysis);
-app.use('/api/comparison', Routes.comparison);
+app.use('/api/hands', handRoutes);
 
 app.listen(PORT,() => {
     console.log(`[server] Handy api running on port ${PORT}`);

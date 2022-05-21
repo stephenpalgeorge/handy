@@ -1,7 +1,3 @@
-import analysis from './analysis';
-import comparison from './comparison';
+import handRoutes from "./hand.routes";
 
-export default {
-    analysis,
-    comparison,
-}
+export { handRoutes }
