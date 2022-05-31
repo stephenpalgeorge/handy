@@ -115,9 +115,29 @@ export function compare(hands: GameHand[]): GameHandDescription {
 export function buildHand(pocket: [string, string], community: [string, string, string, string, string]) {
     const allCards = [...pocket, ...community];
     // validate cards
-    allCards.forEach(c => {
-        if (!deck.includes(c)) throw new Error(`Invalid card "${c}" found.`);
-        if (allCards.filter(item => item === c).length > 1) throw new Error('Cannot analyse duplicate cards.');
-    });
+    validate(allCards);
 
+    // generate a complete feature list for the hand. This will contain all the possible features
+    // that the 7 cards could generate, so some impossible poker hands (like 3 pair, or 2 sets) could
+    // be listed, but we'll then select the features that make the best possible 5 card hand below.
+
+    const cards: Card[] = format.split(allCards);
+    let featureList: Feature[] = [
+        ...findGroups(cards),
+        ...findStraight(cards),
+        ...findFlush(cards),
+    ];
+
+    if (featureList.length === 0) {
+        featureList = [{
+            type: 'high',
+            value: getHighCard(cards),
+        }];
+    }
+
+    console.log(featureList);
+
+    // now we have complete list of the all the hand features, we'll see if any key
+    // groups exist (straight-flush, full-house etc) and gradually eliminate down to
+    // the best feature-group (i.e. the best hand available from the 7 cards.
 }
